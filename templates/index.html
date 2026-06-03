@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <title>Swedavia FlightInfo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #eef4ff, #f8fafc);
+            color: #1f2937;
+        }
+
+        .page {
+            max-width: 1150px;
+            margin: 45px auto;
+            padding: 20px;
+        }
+
+        .header {
+            margin-bottom: 22px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 6px 11px;
+            border-radius: 999px;
+            background: #dbeafe;
+            color: #1d4ed8;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 32px;
+            box-shadow: 0 14px 35px rgba(15, 23, 42, 0.10);
+            border: 1px solid #e5e7eb;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 38px;
+            color: #0f172a;
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #0f172a;
+        }
+
+        p {
+            color: #4b5563;
+            line-height: 1.6;
+        }
+
+        .intro {
+            max-width: 720px;
+            margin-top: 12px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            margin-top: 28px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #374151;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 13px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 11px;
+            font-size: 15px;
+            background: #ffffff;
+            color: #111827;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        .actions {
+            margin-top: 24px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 13px 24px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 11px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        .hint {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .error {
+            margin-top: 28px;
+            padding: 16px 18px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+            border-radius: 13px;
+        }
+
+        .results {
+            margin-top: 34px;
+        }
+
+        .result-meta {
+            margin-bottom: 14px;
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+        }
+
+        table {
+            width: 100%;
+            min-width: 900px;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th {
+            text-align: left;
+            background: #f1f5f9;
+            color: #334155;
+            padding: 13px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        td {
+            padding: 13px;
+            border-bottom: 1px solid #e5e7eb;
+            color: #374151;
+        }
+
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .flight-id {
+            font-weight: bold;
+            color: #111827;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 999px;
+            background: #e0f2fe;
+            color: #075985;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .empty {
+            margin-top: 28px;
+            padding: 18px;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 13px;
+            color: #475569;
+        }
+
+        .footer {
+            margin-top: 24px;
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        @media (max-width: 800px) {
+            .page {
+                margin: 20px auto;
+            }
+
+            .card {
+                padding: 22px;
+            }
+
+            h1 {
+                font-size: 30px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="page">
+        <section class="card">
+            <div class="header">
+                <div class="tag">Flask + Swedavia API</div>
+                <h1>Swedavia FlightInfo</h1>
+                <p class="intro">
+                    Sök ankomster och avgångar från svenska flygplatser.
+                    Webbinterfacet använder samma grundidé som terminalappen, men visar resultatet i en tabell.
+                </p>
+            </div>
+
+            <form method="POST">
+                <div class="form-grid">
+                    <div>
+                        <label for="airport">Flygplats</label>
+                        <select id="airport" name="airport">
+                            {% for code, name in airports.items() %}
+                                <option value="{{ code }}" {% if code == selected_airport %}selected{% endif %}>
+                                    {{ code }} - {{ name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="flight_type">Typ av sökning</label>
+                        <select id="flight_type" name="flight_type">
+                            <option value="arrivals" {% if selected_type == "arrivals" %}selected{% endif %}>
+                                Arrivals
+                            </option>
+                            <option value="departures" {% if selected_type == "departures" %}selected{% endif %}>
+                                Departures
+                            </option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="date">Datum</label>
+                        <input
+                            id="date"
+                            name="date"
+                            type="date"
+                            value="{{ selected_date or today }}"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="flight_number">Flightnummer</label>
+                        <input
+                            id="flight_number"
+                            name="flight_number"
+                            placeholder="Valfritt, exempel: SK1427"
+                            value="{{ flight_number }}"
+                        >
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button type="submit">Sök flyg</button>
+                    <span class="hint">Visar max 30 aktiva flyg per sökning.</span>
+                </div>
+            </form>
+
+            {% if error %}
+                <div class="error">
+                    {{ error }}
+                </div>
+            {% endif %}
+
+            {% if search_done and not error %}
+                <div class="results">
+                    <h2>Resultat</h2>
+
+                    <div class="result-meta">
+                        Flygplats: <strong>{{ selected_airport }}</strong> |
+                        Typ: <strong>{{ selected_type }}</strong> |
+                        Datum: <strong>{{ selected_date }}</strong>
+                        {% if flight_number %}
+                            | Flightnummer: <strong>{{ flight_number }}</strong>
+                        {% endif %}
+                    </div>
+
+                    {% if results %}
+                        <div class="table-wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Flight</th>
+                                        <th>Airline</th>
+                                        <th>From</th>
+                                        <th>To</th>
+                                        <th>Scheduled UTC</th>
+                                        
+                                        <th>Terminal</th>
+                                        <th>Gate</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    {% for flight in results %}
+                                        <tr>
+                                            <td class="flight-id">{{ flight.flight_id }}</td>
+                                            <td>{{ flight.airline }}</td>
+                                            <td>{{ flight.from }}</td>
+                                            <td>{{ flight.to }}</td>
+                                            <td>{{ flight.scheduled_time }}</td>
+                                            
+                                            <td>{{ flight.terminal }}</td>
+                                            <td>{{ flight.gate }}</td>
+                                            <td>
+                                                <span class="badge">{{ flight.status }}</span>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="empty">
+                            Inga flyg hittades för den här sökningen.
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            <div class="footer">
+                Ursprunglig Python-terminalapp ombyggd till ett enkelt webbinterface för VPS-hosting.
+            </div>
+        </section>
+    </main>
+</body>
+</html>
